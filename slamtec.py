@@ -253,8 +253,7 @@ def show_map(map_data):
 
 
 if __name__ == '__main__':
-    # host = "192.168.11.1"
-    host = "192.168.123.234"
+    host = "192.168.11.1"
     st = SlamtecMapper(host=host, port=1445, dump=True)
     # show_summary(st)
 
