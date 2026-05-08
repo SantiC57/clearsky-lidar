@@ -12,14 +12,14 @@ permissions:
   contents: write
 
 jobs:
-  test:
-    name: Tests unitarios (${{ matrix.os }} / Python ${{ matrix.python-version }})
+  test-dev:
+    name: Test desarrollo (${{ matrix.os }} / Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ['3.6', '3.8']
+        python-version: ['3.8', '3.10']
 
     steps:
       - name: Checkout código
@@ -38,12 +38,34 @@ jobs:
           pip install -e .
 
       - name: Correr tests unitarios
+        run: pytest tests/ -v --ignore=tests/test_integration.py
+
+  test-jetson:
+    name: Test Jetson Nano (Ubuntu 18.04 / Python 3.6)
+    runs-on: ubuntu-20.04
+    container:
+      image: ubuntu:18.04
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Python 3.6 y pip
         run: |
-          pytest tests/ -v --ignore=tests/test_integration.py
+          apt-get update
+          apt-get install -y python3.6 python3-pip
+          python3.6 -m pip install --upgrade pip
+
+      - name: Instalar dependencias
+        run: |
+          python3.6 -m pip install pytest
+          python3.6 -m pip install -e .
+
+      - name: Correr tests unitarios
+        run: python3.6 -m pytest tests/ -v --ignore=tests/test_integration.py
 
   release:
     name: Crear Release
-    needs: test
+    needs: [test-dev, test-jetson]
     runs-on: ubuntu-latest
     if: github.ref_type == 'tag'
 
