@@ -40,7 +40,7 @@ jobs:
       - name: Correr tests unitarios
         run: pytest tests/ -v --ignore=tests/test_integration.py
 
- test-jetson:
+  test-jetson:
     name: Test Jetson Nano (Ubuntu 20.04 / Python 3.6)
     runs-on: ubuntu-20.04
     steps:
