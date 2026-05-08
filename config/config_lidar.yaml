@@ -1,0 +1,5 @@
+lidar:
+  host: "192.168.11.1"
+  port: 1445
+  valid_only: true
+  pcd_output: "primer_escaneo.pcd"
