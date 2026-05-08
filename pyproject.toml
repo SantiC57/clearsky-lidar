@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "clearsky-lidar"
+version = "0.1.0"
+description = "Biblioteca de captura LiDAR para el proyecto ClearSky"
+requires-python = ">=3.6"
+dependencies = [
+    "open3d>=0.14.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["clearsky_lidar*"]
