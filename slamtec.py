@@ -238,6 +238,16 @@ def show_summary(st):
     print(f"> Heading: {pose['yaw'] * 180.0 / math.pi:.4f}°")
 
 
+def _get_repo_root() -> Path:
+    """Walk upwards from this file until we find the .git folder."""
+    here = Path(__file__).resolve().parent
+    for parent in [here, *here.parents]:
+        if (parent / ".git").exists():
+            return parent
+    # Fallback: assume repo root == directory containing this script
+    return here
+
+
 def show_map(map_data):
     from PIL import Image
     scale = 4
@@ -261,8 +271,14 @@ if __name__ == '__main__':
     csv = []
     for angle, distance, valid in data:
         csv.append(f"{angle},{distance},{math.degrees(angle)}")
-    p = Path("../../laser-full.csv")
-    p.write_text("\n".join(csv))
+
+    # --- Export CSV ---------------------------------------------------------
+    repo_root = _get_repo_root()
+    dump_dir = repo_root / "dump"
+    dump_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = dump_dir / "laser-full.csv"
+    csv_path.write_text("\n".join(csv))
+    print(f"CSV guardado en: {csv_path.resolve()}")
     """
     # st.get_all()
     map_data = st.get_map_data()
