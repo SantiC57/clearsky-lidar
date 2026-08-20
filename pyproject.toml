@@ -28,6 +28,8 @@ classifiers = [
 ]
 dependencies = [
     "numpy",
+    "pandas",
+    "matplotlib",
 ]
 
 [project.optional-dependencies]
@@ -35,7 +37,19 @@ lidar = [
     "open3d>=0.14",
     "numpy",
 ]
+processing = [
+    "scipy",
+]
+visualization = [
+    "Pillow",
+]
 dev = [
+    "pytest",
+    "pyyaml",
+]
+all = [
+    "scipy",
+    "Pillow",
     "pytest",
     "pyyaml",
 ]

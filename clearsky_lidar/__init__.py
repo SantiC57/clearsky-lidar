@@ -2,21 +2,16 @@
 
 Módulos principales:
     - mapper: Conexión con el sensor SLAMTEC M1M1.
-    - processing: Procesamiento de nubes de puntos.
-    - detection: Detección y clasificación de residuos.
-    - fusion: Fusión de sensores LiDAR + cámara.
+    - processing: Procesamiento de escaneos LiDAR (funciones).
+    - detection: Detección y clasificación de residuos (pendiente).
+    - fusion: Fusión de sensores LiDAR + cámara (pendiente).
 """
 
 from .mapper import Mapper
-from .processing import Processor, PointCloudProcessor
-from .detection import WasteDetector
-from .fusion import SensorFusion
+from . import processing
 
 __version__ = "0.1.0"
 __all__ = [
     "Mapper",
-    "Processor",
-    "PointCloudProcessor",
-    "WasteDetector",
-    "SensorFusion",
+    "processing",
 ]
