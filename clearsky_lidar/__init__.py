@@ -8,10 +8,16 @@ Módulos principales:
 """
 
 from .mapper import Mapper
-from . import processing
 
 __version__ = "0.1.0"
 __all__ = [
     "Mapper",
     "processing",
 ]
+
+# Lazy import para evitar warning con: python -m clearsky_lidar.processing
+def __getattr__(name: str):
+    if name == "processing":
+        import importlib
+        return importlib.import_module(".processing", __name__)
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
