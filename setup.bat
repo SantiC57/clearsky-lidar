@@ -1,6 +1,7 @@
 @echo off
 REM setup.bat - Un comando para hacerlo TODO en Windows (cmd)
 REM Uso: setup.bat
+REM      O: cmd /k setup.bat   (para auto-activar y quedarse en el shell)
 
 set VENV=.venv
 
@@ -23,11 +24,17 @@ echo   ^> Instalando dependencias...
 echo.
 echo ✅ ¡TODO LISTO!
 echo.
-echo Para activar el entorno:
-echo   %VENV%\Scripts\activate.bat
-echo.
-echo Luego puedes usar:
-echo   uv pip install ^<paquete^>         ^(instalar más cosas^)
-echo   python -m pytest tests/            ^(correr tests^)
-echo   python slamtec.py                  ^(ejecutar slamtec^)
-echo   python -m clearsky_lidar.processing  ^(procesamiento LiDAR^)
+
+REM 4. Detectar si se llamó con "cmd /k" para auto-activar
+if "%CMD_AUTO_ACTIVATE%"=="1" (
+    echo 🔄 Activando entorno automáticamente...
+    call %VENV%\Scripts\activate.bat
+    echo ✅ Entorno activado. Prompt listo.
+) else (
+    echo Para activar el entorno AHORA:
+    echo   cmd /k setup.bat
+    echo.
+    echo O en dos pasos:
+    echo   setup.bat
+    echo   %VENV%\Scripts\activate.bat
+)
