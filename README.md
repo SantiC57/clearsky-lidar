@@ -51,12 +51,3 @@ python clearsky_lidar/processing.py
 ```bash
 python -m pytest tests/ -v
 ```
-
-### Extras opcionales
-
-```bash
-uv pip install -e .[processing]      # scipy para ConvexHull
-uv pip install -e .[visualization]   # Pillow para show_map
-uv pip install -e .[lidar]           # open3d para PCD (Python 3.10-3.12)
-uv pip install -e .[all]             # todo desarrollo (sin open3d en Py3.14+)
-```
