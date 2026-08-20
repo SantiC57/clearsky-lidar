@@ -1,0 +1,25 @@
+# ============================================================
+# Configuración del LiDAR SLAMTEC M1M1 — ClearSky
+# ============================================================
+# Este archivo define los parámetros de conexión y captura del
+# sensor LiDAR montado en el dron para el proyecto ClearSky.
+# ============================================================
+
+lidar:
+  # --- Conexión ---
+  host: "192.168.11.1"          # IP por defecto del M1M1 en la LAN
+  port: 1445                     # Puerto TCP del protocolo JSON Slamtec
+
+  # --- Captura ---
+  valid_only: true               # Descartar lecturas inválidas del sensor
+  pcd_output: "primer_escaneo.pcd"  # Archivo de salida PCD por defecto
+
+  # --- Rango del sensor ---
+  rango_min_m: 0.15              # Distancia mínima del M1M1 (especificación)
+  rango_max_m: 20.0              # Distancia máxima del M1M1 (especificación)
+
+  # --- Frecuencia ---
+  frecuencia_hz: 8               # Frecuencia de escaneo típica del M1M1
+
+  # --- Montaje en el dron ---
+  altura_montaje_m: 4.0          # Altura de montaje del LiDAR sobre el suelo

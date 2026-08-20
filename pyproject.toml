@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clearsky-lidar"
+version = "0.1.0"
+description = "Biblioteca de captura LiDAR para el proyecto ClearSky"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.6"
+authors = [
+    {name = "ClearSky Team"},
+]
+keywords = ["lidar", "slamtec", "m1m1", "drone", "waste-detection", "point-cloud"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+dependencies = [
+    "numpy",
+]
+
+[project.optional-dependencies]
+lidar = [
+    "open3d>=0.14",
+    "numpy",
+]
+dev = [
+    "pytest",
+    "pyyaml",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["clearsky_lidar*"]
