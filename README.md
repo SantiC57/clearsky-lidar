@@ -32,9 +32,6 @@ Biblioteca Python para captura, procesamiento y visualización de datos LiDAR de
 # Script standalone - genera dump/laser-full.csv
 python slamtec.py
 
-# Desde el paquete - guarda PCD (requiere extra lidar: open3d)
-python -c "from clearsky_lidar import Mapper; m=Mapper(); m.connect(); pts=m.scan(); m.save_pcd(pts); m.disconnect()"
-```
 
 ### Procesamiento offline (requiere dump/laser-full.csv existente)
 
@@ -42,9 +39,6 @@ python -c "from clearsky_lidar import Mapper; m=Mapper(); m.connect(); pts=m.sca
 # Módulo - genera Graphics/lidar_resultado.png
 python -m clearsky_lidar.processing
 
-# Directo
-python clearsky_lidar/processing.py
-```
 
 ### Tests
 
