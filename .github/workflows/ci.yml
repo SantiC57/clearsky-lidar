@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.10"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package (base + extras + open3d)
+        run: pip install -e ".[all,lidar]"
+
+      - name: Run tests
+        run: pytest tests/ -v
+
+  jetson-compat:
+    name: Jetson compat (ARM64 · Ubuntu 18.04)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable ARM64 emulation
+        uses: docker/setup-qemu-action@v3
+
+      - name: Validate syntax + base deps (no open3d)
+        run: |
+          docker run --platform linux/arm64 \
+            -v "$PWD":/workspace -w /workspace \
+            ubuntu:18.04 bash -c '
+              set -euxo pipefail
+              apt-get update -qq
+              # Python 3.7 desde bionic-updates (mismo que en la Jetson; deadsnakes también sirve)
+              apt-get install -y -qq curl python3.7 python3.7-dev python3.7-distutils
+              python3.7 --version
+              # 1) Sintaxis compatible con el Python de la Jetson
+              python3.7 -m py_compile slamtec.py dev_server.py clearsky_lidar/*.py tests/*.py
+              # 2) Deps base + scipy SIN open3d (evita compilar en emulación)
+              curl -sS https://bootstrap.pypa.io/pip/3.7/get-pip.py | python3.7
+              python3.7 -m pip install -q --upgrade "pip<24" "setuptools<69"
+              python3.7 -m pip install -e ".[processing,dev]"
+              # 3) Tests sin open3d ni hardware
+              python3.7 -m pytest tests/ -v -k "not open3d"
+            '
