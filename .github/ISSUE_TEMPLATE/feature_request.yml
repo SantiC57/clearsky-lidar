@@ -1,0 +1,73 @@
+name: Feature Request
+description: Proponer una nueva funcionalidad o mejora
+title: "feat(scope): descripción breve"
+labels: ["enhancement", "status:needs-review"]
+body:
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight Checks
+      description: Antes de crear el issue, confirma lo siguiente
+      options:
+        - label: He buscado issues existentes y esto no es un duplicado
+          required: true
+        - label: Entiendo que este issue necesita status:approved antes de abrir un PR
+          required: true
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema que Resuelve
+      description: Qué dolor o limitación actual soluciona esta feature
+      placeholder: "Actualmente no hay forma de configurar la IP/puerto del LiDAR sin editar slamtec.py"
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solución Propuesta
+      description: Cómo debería funcionar desde la perspectiva del usuario
+      placeholder: |
+        Agregar argumentos CLI a slamtec.py:
+        --host IP_DEL_LIDAR (default: 192.168.11.1)
+        --port PUERTO (default: 1445)
+        --output DIR_SALIDA (default: ./dump)
+
+        Ejemplo:
+        python slamtec.py --host 10.0.0.50 --port 1446
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área Afectada
+      options:
+        - slamtec.py (captura LiDAR)
+        - processing.py (procesamiento offline)
+        - mapper.py (SLAM/export PCD)
+        - Tests
+        - CI/CD (GitHub Actions)
+        - Setup scripts (setup.sh, setup-jetson.sh, etc.)
+        - Documentación
+        - Empaquetado / PyPI
+        - Otro
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas Consideradas
+      description: Otros enfoques o workarounds que evaluaste
+      placeholder: "Variable de entorno LIDAR_HOST, pero CLI es más explícito y discoverable"
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto Adicional
+      description: Mockups, ejemplos de uso, referencias a issues/PRs relacionados
+      placeholder: "Relacionado con #12 (config YAML para mapper)"

@@ -1,0 +1,117 @@
+name: Bug Report
+description: Reportar un bug en clearsky-lidar
+title: "fix(scope): descripción breve"
+labels: ["bug", "status:needs-review"]
+body:
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight Checks
+      description: Antes de crear el issue, confirma lo siguiente
+      options:
+        - label: He buscado issues existentes y esto no es un duplicado
+          required: true
+        - label: Entiendo que este issue necesita status:approved antes de abrir un PR
+          required: true
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción del Bug
+      description: Qué está fallando, claro y conciso
+      placeholder: "Al ejecutar X, ocurre Y..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para Reproducir
+      description: Pasos numerados, mínimos y precisos
+      placeholder: |
+        1. Clonar repo
+        2. Ejecutar `python slamtec.py`
+        3. Ver error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamiento Esperado
+      description: Qué debería pasar
+      placeholder: "El script debería conectar al LiDAR y empezar a leer datos"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamiento Real
+      description: Qué pasa en su lugar (incluye errores/logs)
+      placeholder: "Lanza ConnectionRefusedError: [Errno 111] Connection refused"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Sistema Operativo
+      options:
+        - Ubuntu 18.04 (Jetson)
+        - Ubuntu 20.04+
+        - Debian
+        - macOS
+        - Windows (WSL)
+        - Otro
+    validations:
+      required: true
+
+  - type: dropdown
+    id: python_version
+    attributes:
+      label: Versión de Python
+      options:
+        - 3.7.x
+        - 3.8.x
+        - 3.10.x
+        - 3.11+
+        - No aplica
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Componente Afectado
+      options:
+        - slamtec.py (captura LiDAR)
+        - processing.py (procesamiento offline)
+        - mapper.py (SLAM/export PCD)
+        - Tests
+        - CI/CD (GitHub Actions)
+        - Setup scripts
+        - Documentación
+        - Otro
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Errores Relevantes
+      description: Pega aquí el traceback o logs (se formatea como código)
+      render: shell
+      placeholder: |
+        Traceback (most recent call last):
+          File "slamtec.py", line 42, in <module>
+            ConnectionRefusedError: [Errno 111] Connection refused
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto Adicional
+      description: Capturas, workarounds, configuración de red, etc.
+      placeholder: "LiDAR en 192.168.11.1:1445, cable Ethernet directo a Jetson"
