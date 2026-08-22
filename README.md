@@ -14,15 +14,16 @@ Biblioteca Python para captura, procesamiento y visualización de datos LiDAR de
 
 ## Instalación y uso por sistema operativo
 
-> **Requisitos previos:** Python 3.10+ (3.12 recomendado para `open3d`)
+> **Requisitos previos:** Python 3.7+ (3.7 requerido para Jetson, 3.10+ recomendado para `open3d` en x86_64)
 
 | OS / Shell | Comando único (instala + activa) |
 |------------|----------------------------------|
 | **Linux / macOS** · **fish** | `source ./setup.fish` |
 | **Linux / macOS** · **bash / zsh** | `source ./setup.sh` |
 | **Windows** · **PowerShell** | `. .\setup.ps1` |
+| **Jetson Nano (Ubuntu 18.04 / ARM64)** · **bash** | `source ./setup-jetson.sh` |
 
-> **Nota:** Si solo ejecutas `./setup.fish` o `./setup.sh` **sin `source`**, te muestra el comando de activación pero **no lo activa**. Con `source` / `.` te deja dentro del venv listo para trabajar.
+> **Nota:** Si solo ejecutas `./setup.fish`, `./setup.sh` o `./setup-jetson.sh` **sin `source`**, te muestra el comando de activación pero **no lo activa**. Con `source` / `.` te deja dentro del venv listo para trabajar.
 
 ## Comandos de uso
 
