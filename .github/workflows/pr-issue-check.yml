@@ -25,10 +25,10 @@ jobs:
             const title = context.payload.pull_request.title || '';
             const text = `${title}\n${body}`;
             
-            // Patrones: Closes #123, Fixes #123, Resolves #123, Relacionado a #123, Related to #123
+            // Patrones explícitos de vinculación: Closes #123, Fixes #123, Resolves #123, Relacionado a #123, Related to #123
+            // NO usamos fallback genérico /#(\d+)/ para no capturar números de PR, commits, etc.
             const patterns = [
-              /(?:closes?|fixes?|resolves?|relacionado\s+a|related\s+to)\s+#(\d+)/gi,
-              /#(\d+)/g  // fallback: cualquier #N en título/cuerpo
+              /(?:closes?|fixes?|resolves?|relacionado\s+a|related\s+to)\s+#(\d+)/gi
             ];
             
             const issues = new Set();
