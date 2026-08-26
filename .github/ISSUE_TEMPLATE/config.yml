@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Pregunta / Discusión
+    url: https://github.com/SantiC57/clearsky-lidar/discussions
+    about: Dudas de uso, configuración, o charla general — NO es un bug ni feature
+  - name: 🐛 Reportar Bug
+    url: https://github.com/SantiC57/clearsky-lidar/issues/new?template=bug_report.yml
+    about: Algo no funciona como debería
+  - name: ✨ Solicitar Feature
+    url: https://github.com/SantiC57/clearsky-lidar/issues/new?template=feature_request.yml
+    about: Proponer una mejora o nueva funcionalidad
