@@ -1,122 +1,48 @@
 # ClearSky LiDAR
 
-Biblioteca de captura y procesamiento LiDAR para el proyecto **ClearSky** — detección de residuos sólidos en cuerpos de agua mediante dron con LiDAR.
+Biblioteca Python para captura, procesamiento y visualización de datos LiDAR del sensor **SLAMTEC M1M1** en el proyecto ClearSky.
 
-## Descripción
+## Qué hace este repo
 
-ClearSky LiDAR proporciona una API Python para conectar con el sensor SLAMTEC M1M1, capturar nubes de puntos 3D, y procesarlas para detectar y clasificar residuos. Está diseñado para ejecutarse en una NVIDIA Jetson Nano como parte del sistema de navegación autónoma del dron.
+| Módulo | Función |
+|--------|---------|
+| `slamtec.py` | Cliente TCP crudo para el protocolo JSON del M1M1 (puerto 1445) |
+| `clearsky_lidar/mapper.py` | Wrapper alto nivel: escaneo, pose, guardado PCD (Open3D) |
+| `clearsky_lidar/processing.py` | Lee `dump/laser-full.csv`, filtra, convierte polar→cartesiano, genera gráfica 2-panel (polar + top-down con ConvexHull) |
+| `clearsky_lidar/detection.py` | (pendiente) Detección y clasificación de residuos |
+| `clearsky_lidar/fusion.py` | (pendiente) Fusión LiDAR + cámara |
 
-## Estado Actual
+## Instalación y uso por sistema operativo
 
-**v0.1.0** — Subtarea 1 completa (infraestructura base).
+> **Requisitos previos:** Python 3.7+ (3.7 requerido para Jetson, 3.10+ recomendado para `open3d` en x86_64)
 
-| Módulo | Estado | Descripción |
-|--------|--------|-------------|
-| `mapper.py` | ✅ Funcional | Conexión y captura con M1M1 |
-| `processing.py` | 🔲 Placeholder | Procesamiento de nubes de puntos |
-| `detection.py` | 🔲 Placeholder | Detección y clasificación de residuos |
-| `fusion.py` | 🔲 Placeholder | Fusión LiDAR + cámara |
+| OS / Shell | Comando único (instala + activa) |
+|------------|----------------------------------|
+| **Linux / macOS** · **fish** | `source ./setup.fish` |
+| **Linux / macOS** · **bash / zsh** | `source ./setup.sh` |
+| **Windows** · **PowerShell** | `. .\setup.ps1` |
+| **Jetson Nano (Ubuntu 18.04 / ARM64)** · **bash** | `source ./setup-jetson.sh` |
 
-## Estructura del Proyecto
+> **Nota:** Si solo ejecutas `./setup.fish`, `./setup.sh` o `./setup-jetson.sh` **sin `source`**, te muestra el comando de activación pero **no lo activa**. Con `source` / `.` te deja dentro del venv listo para trabajar.
 
-```
-clearsky-lidar/
-├── clearsky_lidar/          # Paquete principal
-│   ├── __init__.py          # API pública
-│   ├── mapper.py            # Conexión con SLAMTEC M1M1
-│   ├── processing.py        # Procesamiento de nubes de puntos
-│   ├── detection.py         # Detección de residuos
-│   └── fusion.py            # Fusión de sensores
-├── config/
-│   └── config_lidar.yaml    # Parámetros del sensor
-├── scans/                   # Archivos PCD generados (no en repo)
-├── tests/
-│   ├── test_mapper.py       # Tests unitarios del mapper
-│   └── test_integration.py  # Tests de integración
-├── slamtec.py               # Driver base (no modificar)
-├── pyproject.toml            # Configuración del paquete
-└── CHANGELOG.md
-```
+## Comandos de uso
 
-## Instalación
-
-### Requisitos
-- Python >= 3.6
-- numpy
-- open3d >= 0.14 (opcional, para operaciones avanzadas de nubes de puntos)
-
-### Instalación editable
-```bash
-pip install -e .
-```
-
-### Con dependencias opcionales
-```bash
-pip install -e ".[lidar]"   # Incluye open3d
-pip install -e ".[dev]"     # Incluye pytest, pyyaml
-```
-
-## Uso Básico
-
-### Captura de nube de puntos
-```python
-from clearsky_lidar import Mapper
-
-mapper = Mapper()
-mapper.connect()
-points = mapper.scan()          # Lista de (x, y, z)
-mapper.save_pcd(points)         # Guarda primer_escaneo.pcd
-mapper.disconnect()
-```
-
-### Lectura de configuración
-```python
-import yaml
-
-with open("config/config_lidar.yaml") as f:
-    config = yaml.safe_load(f)
-
-lidar = config["lidar"]
-print(f"Sensor en {lidar['host']}:{lidar['port']}")
-print(f"Rango: {lidar['rango_min_m']}m - {lidar['rango_max_m']}m")
-```
-
-### Módulos placeholder (futuro)
-```python
-from clearsky_lidar import PointCloudProcessor, WasteDetector, SensorFusion
-
-processor = PointCloudProcessor()
-# processor.filter_noise(points)       # NotImplementedYet
-# processor.downsample(points)         # NotImplementedYet
-```
-
-## Hardware Requerido
-
-- **Sensor**: SLAMTEC M1M1 (LiDAR 2D)
-- **Computadora**: NVIDIA Jetson Nano 4GB (ARM64, Ubuntu 18.04)
-- **Red**: Conexión LAN entre Jetson y M1M1 (192.168.11.1:1445)
-
-## Limitaciones
-
-- La captura real de datos requiere el hardware M1M1 conectado.
-- Los módulos `processing.py`, `detection.py` y `fusion.py` son placeholders.
-- La detección de residuos aún no está implementada.
-- No incluye soporte ROS2 (solo ROS1 Melodic).
-
-## Ejecución de Tests
+### Captura real (requiere M1M1 conectado por Ethernet 192.168.11.1:1445)
 
 ```bash
-# Tests unitarios (no requieren hardware)
-pytest tests/ -v --ignore=tests/test_integration.py
+# Script standalone - genera dump/laser-full.csv
+python slamtec.py
 
-# Todos los tests
-pytest tests/ -v
+
+### Procesamiento offline (requiere dump/laser-full.csv existente)
+
+```bash
+# Módulo - genera Graphics/lidar_resultado.png
+python -m clearsky_lidar.processing
+
+
+### Tests
+
+```bash
+python -m pytest tests/ -v
 ```
-
-## Créditos
-
-Basado en [python-slamtec-mapper](https://github.com/SantiC57/clearsky-lidar) — driver Python para SLAMTEC M1M1 desarrollado mediante ingeniería inversa del protocolo JSON por puerto 1445.
-
-## Licencia
-
-MIT

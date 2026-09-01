@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Biblioteca de captura LiDAR para el proyecto ClearSky"
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.6"
+requires-python = ">=3.7"
 authors = [
     {name = "ClearSky Team"},
 ]
@@ -20,7 +20,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.10",
     "Topic :: Scientific/Engineering",
@@ -28,6 +28,8 @@ classifiers = [
 ]
 dependencies = [
     "numpy",
+    "pandas",
+    "matplotlib",
 ]
 
 [project.optional-dependencies]
@@ -35,7 +37,19 @@ lidar = [
     "open3d>=0.14",
     "numpy",
 ]
+processing = [
+    "scipy",
+]
+visualization = [
+    "Pillow",
+]
 dev = [
+    "pytest",
+    "pyyaml",
+]
+all = [
+    "scipy",
+    "Pillow",
     "pytest",
     "pyyaml",
 ]
