@@ -1,273 +1,137 @@
-"""
-LiDAR Data Processor for ClearSky.
-
-Reads raw LiDAR scan data from a CSV, converts polar coordinates to
-cartesian (x, y), filters out-of-range error values, classifies points
-by distance, computes the ConvexHull of nearby points, and generates
-a two-panel figure (polar + top-down view) saved to Graphics/.
-
-Execution (from repo root):
-    python clearsky_lidar/proccesing.py
-"""
-
-from __future__ import annotations
-
-import numpy as np
 import pandas as pd
-import matplotlib
-
-
-def _detect_interactive_backend() -> bool:
-    """
-    Try common interactive GUI backends and fall back to 'Agg' if none works.
-    Returns ``True`` when an interactive backend could be loaded so
-    ``plt.show()`` will actually display a window.
-    """
-    for backend in ("TkAgg", "Qt5Agg", "Qt4Agg"):
-        try:
-            matplotlib.use(backend, force=True)
-            import matplotlib.pyplot as _plt
-
-            _fig = _plt.figure()
-            _plt.close(_fig)
-            return True
-        except Exception:
-            continue
-    # Final safe fallback for headless environments
-    matplotlib.use("Agg", force=True)
-    return False
-
-
-INTERACTIVE = _detect_interactive_backend()
+import numpy as np
 import matplotlib.pyplot as plt
-from pathlib import Path
-
-# Optional dependency – gracefully degrade if missing
-try:
-    from scipy.spatial import ConvexHull
-except ImportError:
-    ConvexHull = None  # type: ignore[misc,assignment]
+from scipy.spatial import ConvexHull
 
 
-# ---------------------------------------------------------------------------
-# Paths (relative to repo root — script must be run from clearsky-lidar/)
-# ---------------------------------------------------------------------------
-DATA_PATH = Path("dump") / "laser-full.csv"
-GRAPHICS_DIR = Path("Graphics")
+class PointCloudProcessor:
+    """Procesador de nubes de puntos del LiDAR M1M1 — ClearSky"""
 
-# ---------------------------------------------------------------------------
-# CSV columns
-# The source file has no header row.  Column order in the raw CSV is:
-#   angle_rad, distance, angle_deg
-# Distances in this dataset are already in **metres** (confirmed by the
-# magnitude of valid values ~0.66 m).
-# ---------------------------------------------------------------------------
-COLUMN_NAMES = ["angle_rad", "distance", "angle_deg"]
+    # Límites de las zonas (tus variables originales)
+    UMBRAL_CERCA = 1.0   # <= 1m  → rojo  → zona de residuos
+    UMBRAL_MEDIO = 3.0   # <= 3m  → azul  → zona intermedia
+                         # >  3m  → verde → entorno fijo
 
-# LiDAR sensors often emit a sentinel value (e.g. 100 000) when a
-# measurement fails or is out of range.  Anything above this threshold
-# is discarded so it does not distort the plots.
-MAX_VALID_DISTANCE: float = 50_000.0
+    def __init__(self):
+        # Variables que se llenan cuando cargas y procesas
+        self.df          = None   # datos crudos
+        self.df_valido   = None   # puntos válidos (<19m)
+        self.df_invalido = None   # puntos sin retorno (>=19m)
+        self.df_cercano  = None   # zona roja  <= 1m
+        self.df_mediano  = None   # zona azul  1-3m
+        self.df_lejano   = None   # zona verde > 3m
+        self.df_bordes   = None   # contornos de objetos
 
-# Threshold used to colour-code “nearby” vs “far” points (metres).
-UMBRAL: float = 1.0
+    def cargar(self, ruta_csv):
+        """Carga el CSV que genera el mapper.py"""
+        self.df = pd.read_csv(ruta_csv, header=None)
+        self.df.columns = ["angulo_rad", "distancia_m", "angulo_deg"]
 
+    def procesar(self):
+        """Filtra, convierte a X Y y separa en 3 zonas"""
 
-def validate_dataframe(df: pd.DataFrame) -> None:
-    """Ensure the DataFrame is not empty and contains every expected column."""
-    if df.empty:
-        raise ValueError("El archivo CSV está vacío.")
+        # Filtrar inválidos — alcance real M1M1 = 19m
+        self.df_valido   = self.df[self.df["distancia_m"] < 19].copy()
+        self.df_invalido = self.df[self.df["distancia_m"] >= 19]
 
-    missing = [col for col in COLUMN_NAMES if col not in df.columns]
-    if missing:
-        raise ValueError(f"Faltan columnas requeridas: {missing}")
+        # Convertir (ángulo, distancia) → (x, y)
+        self.df_valido["x"] = self.df_valido["distancia_m"] * np.cos(self.df_valido["angulo_rad"])
+        self.df_valido["y"] = self.df_valido["distancia_m"] * np.sin(self.df_valido["angulo_rad"])
 
+        # Separar en 3 zonas
+        self.df_cercano = self.df_valido[self.df_valido["distancia_m"] <= self.UMBRAL_CERCA]
+        self.df_mediano = self.df_valido[
+            (self.df_valido["distancia_m"] > self.UMBRAL_CERCA) &
+            (self.df_valido["distancia_m"] <= self.UMBRAL_MEDIO)
+        ]
+        self.df_lejano = self.df_valido[self.df_valido["distancia_m"] > self.UMBRAL_MEDIO]
 
-def read_lidar_data(path: Path) -> pd.DataFrame:
-    """
-    Load LiDAR data from *path*.
+        # Detectar bordes de objetos
+        df_sorted = self.df_valido.sort_values("angulo_deg").copy()
+        df_sorted["delta_dist"] = df_sorted["distancia_m"].diff().abs()
+        self.df_bordes = df_sorted[df_sorted["delta_dist"] > 0.5]
 
-    Validates that the file exists, is non-empty, and contains the expected
-    columns (added manually because the CSV has no header).
-    """
-    if not path.exists():
-        raise FileNotFoundError(f"No se encontró el archivo: {path.resolve()}")
+    def resumen(self):
+        """Imprime el resumen de los datos"""
+        print("===== RESUMEN DE TUS DATOS =====")
+        print(f"Total de puntos escaneados : {len(self.df)}")
+        print(f"Puntos válidos             : {len(self.df_valido)}")
+        print(f"Puntos sin retorno         : {len(self.df_invalido)}")
+        print(f"Objetos cercanos  (<=1m)   : {len(self.df_cercano)}")
+        print(f"Objetos medianos  (1-3m)   : {len(self.df_mediano)}")
+        print(f"Objetos lejanos   (>3m)    : {len(self.df_lejano)}")
+        print(f"Bordes detectados          : {len(self.df_bordes)}")
+        print(f"Distancia mínima detectada : {self.df_valido['distancia_m'].min():.3f} m")
+        print(f"Distancia máxima detectada : {self.df_valido['distancia_m'].max():.3f} m")
+        print(f"Distancia promedio         : {self.df_valido['distancia_m'].mean():.3f} m")
 
-    if path.stat().st_size == 0:
-        raise ValueError(f"El archivo está vacío: {path.resolve()}")
+    def graficar(self, guardar_como="lidar_resultado.png"):
+        """Genera las 3 gráficas y las guarda"""
+        fig = plt.figure(figsize=(17, 5.5))
 
-    df = pd.read_csv(path, header=None, names=COLUMN_NAMES)
-    validate_dataframe(df)
-    return df
+        # Gráfica 1: Vista polar — 3 colores
+        ax1 = fig.add_subplot(131, projection='polar')
+        ax1.scatter(self.df_lejano["angulo_rad"],  self.df_lejano["distancia_m"],
+                    c="green",     s=6,  alpha=0.55, label="Lejano  (>3m)")
+        ax1.scatter(self.df_mediano["angulo_rad"], self.df_mediano["distancia_m"],
+                    c="steelblue", s=9,  alpha=0.7,  label="Mediano (1-3m)")
+        ax1.scatter(self.df_cercano["angulo_rad"], self.df_cercano["distancia_m"],
+                    c="red",       s=12, alpha=0.85, label="Cercano (<=1m)")
+        ax1.set_title("Vista polar 360°", fontsize=11, pad=14)
+        ax1.legend(loc="upper right", fontsize=8, bbox_to_anchor=(1.45, 1.12))
 
+        # Gráfica 2: Vista de planta
+        ax2 = fig.add_subplot(132)
+        ax2.scatter(self.df_lejano["x"],  self.df_lejano["y"],
+                    c="green",     s=9,  alpha=0.55, label="Lejano  (>3m)")
+        ax2.scatter(self.df_mediano["x"], self.df_mediano["y"],
+                    c="steelblue", s=12, alpha=0.7,  label="Mediano (1-3m)")
+        ax2.scatter(self.df_cercano["x"], self.df_cercano["y"],
+                    c="red",       s=18, alpha=0.9,  label="Cercano (<=1m)")
+        ax2.plot(0, 0, "k^", markersize=11, label="Sensor LiDAR", zorder=6)
 
-def filter_valid_points(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Remove saturated / out-of-range measurements.
+        if len(self.df_cercano) >= 3:
+            pts   = self.df_cercano[["x","y"]].values
+            hull  = ConvexHull(pts)
+            area  = hull.volume
+            verts = pts[hull.vertices]
+            verts = np.vstack([verts, verts[0]])
+            ax2.fill(verts[:,0], verts[:,1], alpha=0.15, color="red")
+            ax2.plot(verts[:,0], verts[:,1], "r-", lw=1.5, alpha=0.7)
+            ax2.set_title(f"Vista de planta\nÁrea zona cercana: {area:.3f} m²", fontsize=11)
 
-    Returns a new DataFrame containing only rows whose distance is
-    below *MAX_VALID_DISTANCE*.
-    """
-    filtered = df[df["distance"] < MAX_VALID_DISTANCE].copy()
-    if filtered.empty:
-        raise ValueError(
-            "No quedaron puntos válidos después de filtrar valores de error."
-        )
-    return filtered
+        ax2.set_xlabel("X (metros)")
+        ax2.set_ylabel("Y (metros)")
+        ax2.legend(fontsize=8)
+        ax2.grid(True, alpha=0.3)
+        ax2.set_aspect("equal")
 
+        # Gráfica 3: Histograma
+        ax3 = fig.add_subplot(133)
+        bins = np.arange(0, 19.2, 0.15)
+        ax3.hist(self.df_cercano["distancia_m"], bins=bins, color="red",
+                 alpha=0.75, label="Cercano (<=1m)", edgecolor="white")
+        ax3.hist(self.df_mediano["distancia_m"], bins=bins, color="steelblue",
+                 alpha=0.6,  label="Mediano (1-3m)", edgecolor="white")
+        ax3.hist(self.df_lejano["distancia_m"],  bins=bins, color="green",
+                 alpha=0.5,  label="Lejano  (>3m)",  edgecolor="white")
+        ax3.axvline(self.UMBRAL_CERCA, color="red",  lw=2.5,
+                    linestyle="--", label=f"Umbral cerca: {self.UMBRAL_CERCA}m")
+        ax3.axvline(self.UMBRAL_MEDIO, color="blue", lw=2.5,
+                    linestyle="--", label=f"Umbral medio: {self.UMBRAL_MEDIO}m")
+        ax3.set_xlabel("Distancia (metros)")
+        ax3.set_ylabel("Cantidad de puntos")
+        ax3.set_title("Distribución de distancias")
+        ax3.legend(fontsize=8)
+        ax3.grid(True, alpha=0.3)
 
-def polar_to_cartesian(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Convert polar coordinates (angle_rad, distance) to cartesian (x, y).
-
-    Formulas:
-        x = distance * cos(angle_rad)
-        y = distance * sin(angle_rad)
-    """
-    points = df.copy()
-    points["x"] = points["distance"] * np.cos(points["angle_rad"])
-    points["y"] = points["distance"] * np.sin(points["angle_rad"])
-    return points
-
-
-def classify_points(df: pd.DataFrame, umbral: float = UMBRAL) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Split the DataFrame into *nearby* (distance < umbral) and *far*
-    (distance >= umbral) subsets.
-    """
-    cercano = df[df["distance"] < umbral].copy()
-    lejano = df[df["distance"] >= umbral].copy()
-    return cercano, lejano
-
-
-def _draw_polar_panel(ax: plt.Axes, df_cercano: pd.DataFrame, df_lejano: pd.DataFrame) -> None:
-    """Render the polar scatter panel."""
-    ax.scatter(
-        df_lejano["angle_rad"],
-        df_lejano["distance"],
-        c="steelblue",
-        s=6,
-        alpha=0.55,
-        label="Lejano (>1 m)",
-        edgecolors="none",
-    )
-    ax.scatter(
-        df_cercano["angle_rad"],
-        df_cercano["distance"],
-        c="red",
-        s=12,
-        alpha=0.85,
-        label="Cercano (<1 m)",
-        edgecolors="none",
-    )
-    ax.set_title("Vista polar 360°", fontsize=11, pad=14)
-    ax.legend(loc="upper right", fontsize=8, bbox_to_anchor=(1.45, 1.12))
-    ax.grid(True, alpha=0.3)
-
-
-def _draw_top_view_panel(
-    ax: plt.Axes,
-    df_cercano: pd.DataFrame,
-    df_lejano: pd.DataFrame,
-) -> None:
-    """Render the top-down (vista de planta) panel."""
-    ax.scatter(
-        df_lejano["x"],
-        df_lejano["y"],
-        c="steelblue",
-        s=9,
-        alpha=0.55,
-        label="Lejano",
-        edgecolors="none",
-    )
-    ax.scatter(
-        df_cercano["x"],
-        df_cercano["y"],
-        c="red",
-        s=18,
-        alpha=0.9,
-        label="Cercano (<1 m)",
-        edgecolors="none",
-    )
-    ax.plot(0, 0, "k^", markersize=11, label="Sensor LiDAR", zorder=6)
-
-    # ConvexHull for the nearby cluster
-    if ConvexHull is not None and len(df_cercano) >= 3:
-        pts = df_cercano[["x", "y"]].values
-        hull = ConvexHull(pts)
-        area = hull.volume  # volume == area in 2‑D
-        verts = pts[hull.vertices]
-        verts = np.vstack([verts, verts[0]])
-        ax.fill(verts[:, 0], verts[:, 1], alpha=0.15, color="red")
-        ax.plot(verts[:, 0], verts[:, 1], "r-", lw=1.5, alpha=0.7)
-        ax.set_title(f"Vista de planta\nÁrea zona cercana: {area:.3f} m²", fontsize=11)
-    else:
-        ax.set_title("Vista de planta", fontsize=11)
-
-    ax.set_xlabel("X (metros)")
-    ax.set_ylabel("Y (metros)")
-    ax.legend(fontsize=8)
-    ax.grid(True, alpha=0.3)
-    ax.set_aspect("equal")
-
-
-def generate_figure(df: pd.DataFrame, output_path: Path) -> None:
-    """
-    Build the two-panel LiDAR analysis figure and save it.
-
-    Panels:
-        1. Polar scatter   (angle vs distance)
-        2. Top-down view   (x, y) with ConvexHull for nearby cluster
-    """
-    fig = plt.figure(figsize=(12, 5.5))
-
-    # Convert to cartesian first so both panels can reuse the coordinates
-    points = polar_to_cartesian(df)
-
-    df_cercano, df_lejano = classify_points(points)
-
-    ax1 = fig.add_subplot(121, projection="polar")
-    _draw_polar_panel(ax1, df_cercano, df_lejano)
-
-    ax2 = fig.add_subplot(122)
-    _draw_top_view_panel(ax2, df_cercano, df_lejano)
-
-    fig.suptitle("Análisis LiDAR 2D — Escaneo 360°", fontsize=13, fontweight="bold")
-    plt.tight_layout()
-    fig.savefig(output_path, dpi=150, bbox_inches="tight")
-    print(f"Gráfica guardada como {output_path}")
-
-    if INTERACTIVE:
+        plt.suptitle("Análisis LiDAR 2D — Escaneo 360°", fontsize=13, fontweight="bold")
+        plt.tight_layout()
+        plt.savefig(guardar_como, dpi=150, bbox_inches="tight")
         plt.show()
-    plt.close(fig)
+        print(f"Gráfica guardada como {guardar_como}")
 
 
-def main() -> None:
-    """Orchestrate reading, filtering, processing and visualisation."""
-    try:
-        GRAPHICS_DIR.mkdir(parents=True, exist_ok=True)
-
-        raw_df = read_lidar_data(DATA_PATH)
-        print(f"Puntos leídos: {len(raw_df)}")
-
-        clean_df = filter_valid_points(raw_df)
-        print(f"Puntos válidos después de filtrar: {len(clean_df)}")
-
-        # Single high-quality figure with all three panels
-        generate_figure(clean_df, GRAPHICS_DIR / "lidar_resultado.png")
-
-        print("Procesamiento completado.")
-
-    except FileNotFoundError as exc:
-        print(f"[ERROR] {exc}")
-        raise SystemExit(1)
-    except ValueError as exc:
-        print(f"[ERROR] {exc}")
-        raise SystemExit(1)
-    except Exception as exc:
-        print(f"[ERROR] Error inesperado: {exc}")
-        raise SystemExit(1)
-
-
-if __name__ == "__main__":
-    main()
+# Marcadores de posición que el __init__.py espera importar
+class Processor(PointCloudProcessor):
+    pass
