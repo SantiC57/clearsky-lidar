@@ -135,3 +135,15 @@ class PointCloudProcessor:
 # Marcadores de posición que el __init__.py espera importar
 class Processor(PointCloudProcessor):
     pass
+if __name__ == "__main__":
+    from pathlib import Path
+
+    ruta_csv = Path("dump/laser-full.csv")
+    carpeta_graficos = Path("Graphics")
+    carpeta_graficos.mkdir(parents=True, exist_ok=True)
+
+    processor = PointCloudProcessor()
+    processor.cargar(ruta_csv)
+    processor.procesar()
+    processor.resumen()
+    processor.graficar(guardar_como=str(carpeta_graficos / "lidar_resultado.png"))
