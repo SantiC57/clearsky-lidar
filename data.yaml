@@ -1,0 +1,11 @@
+names:
+  0: cardboard
+  1: glass
+  2: metal
+  3: paper
+  4: plastic
+  5: trash
+nc: 6
+test: /home/santiago/Descargas/Waste Classification.v1i.multiclass/test
+train: /home/santiago/Descargas/Waste Classification.v1i.multiclass/train
+val: /home/santiago/Descargas/Waste Classification.v1i.multiclass/valid
