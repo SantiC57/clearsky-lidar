@@ -40,6 +40,18 @@ def main():
         help="Roboflow API key (or set ROBOFLOW_API_KEY env var)",
     )
     parser.add_argument(
+        "--workspace",
+        type=str,
+        default="yolov8-ofcbj",
+        help="Roboflow workspace name (default: yolov8-ofcbj)",
+    )
+    parser.add_argument(
+        "--workflow",
+        type=str,
+        default="general-segmentation-api-9",
+        help="Roboflow workflow ID (default: general-segmentation-api-9)",
+    )
+    parser.add_argument(
         "--classes",
         type=str,
         nargs="+",
@@ -57,6 +69,8 @@ def main():
     print("[ClearSky] Initializing remote waste detector...")
     detector = WasteDetectorRemote(
         api_key=args.api_key,
+        workspace_name=args.workspace,
+        workflow_id=args.workflow,
         classes=args.classes,
     )
     print(f"[ClearSky] Classes: {', '.join(args.classes)}")
