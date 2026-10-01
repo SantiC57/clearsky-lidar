@@ -150,7 +150,7 @@ import cv2
 # Inicializar detector remoto
 detector = WasteDetectorRemote(
     api_key="your_api_key",  # o usa ROBOFLOW_API_KEY env var
-    workspace_name="yair-santiago-cetre-diaz",
+    workspace_name="yolov8-ofcbj",
     workflow_id="general-segmentation-api-9",
     classes=["paper", "plastic", "glass", "metal", "cardboard"]
 )

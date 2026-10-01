@@ -26,7 +26,7 @@ class WasteDetectorRemote:
         self,
         api_url: str = "https://serverless.roboflow.com",
         api_key: str | None = None,
-        workspace_name: str = "yair-santiago-cetre-diaz",
+        workspace_name: str = "yolov8-ofcbj",
         workflow_id: str = "general-segmentation-api-9",
         classes: list[str] | None = None,
         use_cache: bool = True,
@@ -48,6 +48,7 @@ class WasteDetectorRemote:
             )
 
         import os
+
         self.api_key = api_key or os.getenv("ROBOFLOW_API_KEY")
         if not self.api_key:
             raise ValueError(
@@ -62,9 +63,7 @@ class WasteDetectorRemote:
         self.client = InferenceHTTPClient(
             api_url=api_url,
             api_key=self.api_key,
-        ).configure(
-            InferenceConfiguration(api_key_transport="header")
-        )
+        ).configure(InferenceConfiguration(api_key_transport="header"))
 
     def predict(self, image: np.ndarray) -> dict[str, Any]:
         """Run inference on an image.
