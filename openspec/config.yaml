@@ -1,0 +1,75 @@
+project: clearsky-lidar
+description: "Biblioteca Python para captura, procesamiento y visualización de datos LiDAR del sensor SLAMTEC M1M1"
+stack:
+  language: python
+  version: "3.10+"
+  package_manager: pip
+  build_system: setuptools
+  dependencies:
+    - numpy
+    - pandas
+    - matplotlib
+    - scipy
+    - open3d
+    - pyyaml
+    - Pillow
+  test_runner: pytest
+  ci: github-actions
+strict_tdd: true
+persistence_mode: hybrid
+
+testing:
+  runner:
+    command: "pytest tests/ -v"
+    framework: pytest
+  layers:
+    unit:
+      available: true
+      tool: pytest
+    integration:
+      available: true
+      tool: pytest
+    e2e:
+      available: false
+      tool: "—"
+  coverage:
+    available: false
+    command: "—"
+  quality:
+    linter:
+      available: false
+      command: "—"
+    type_checker:
+      available: false
+      command: "—"
+    formatter:
+      available: false
+      command: "—"
+
+context: |
+  Python 3.10+ LiDAR processing library for SLAMTEC M1M1 sensor.
+  Modules: mapper (TCP client), processing (CSV→polar/cartesian + ConvexHull viz),
+  detection (empty), fusion (empty). Tests in tests/ with pytest.
+  CI runs on Python 3.8 and 3.10. No linter/type-checker/formatter configured.
+
+phase_rules:
+  propose:
+    require_issue: true
+    max_scope_lines: 200
+  spec:
+    require_scenarios: true
+    format: gherkin
+  design:
+    require_architecture: true
+    require_adr_for_breaking: true
+  tasks:
+    max_task_size: 400
+    require_test_first: true
+  apply:
+    require_tdd: true
+    commit_per_task: true
+  verify:
+    require_all_tests_pass: true
+    require_coverage_threshold: false
+  archive:
+    sync_delta_specs: true
