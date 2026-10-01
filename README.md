@@ -120,26 +120,42 @@ Para probar rápidamente sin entrenar localmente, usa la API de Roboflow:
 ```bash
 pip install "clearsky-lidar[remote]"
 # o directamente:
-pip install inference-sdk opencv-python
+pip install requests opencv-python
 ```
 
 #### Configuración
 
+1. **Obtener API key de Roboflow**:
+   - Ve a https://app.roboflow.com
+   - Click en tu perfil → "Settings" → copia tu API key
+
+2. **Crear tu propio workflow** (IMPORTANTE):
+   - Ve a tu workspace en Roboflow
+   - Crea un nuevo proyecto usando el dataset "Waste Classification" (público)
+   - Ve a "Workflows" → "New Workflow"
+   - Configura el workflow para clasificación/detección de residuos
+   - Copia el `workflow_id` de tu workflow
+
+3. **Configurar variables de entorno**:
+
 ```bash
-# Establecer API key de Roboflow
 export ROBOFLOW_API_KEY=your_api_key_here
 ```
 
 #### Uso con cámara
 
 ```bash
-# Probar inferencia remota con cámara
-python scripts/test_camera_api.py
+# Probar inferencia remota con cámara (usa tu workspace y workflow)
+python scripts/test_camera_api.py --workspace your-workspace-name --workflow your-workflow-id
 
 # Con opciones personalizadas
 python scripts/test_camera_api.py --camera 0 --width 1280 --height 720 \
-    --classes paper plastic glass metal cardboard --save
+    --classes paper plastic glass metal cardboard \
+    --inference-every 5 \
+    --save
 ```
+
+**Nota**: El parámetro `--inference-every` controla cada cuántos frames se ejecuta la inferencia. Por defecto es 5 (inferencia cada 5 frames para balancear velocidad y límites de API).
 
 #### Uso desde Python
 
@@ -147,11 +163,11 @@ python scripts/test_camera_api.py --camera 0 --width 1280 --height 720 \
 from clearsky_lidar import WasteDetectorRemote
 import cv2
 
-# Inicializar detector remoto
+# Inicializar detector remoto (usa tu workspace y workflow)
 detector = WasteDetectorRemote(
     api_key="your_api_key",  # o usa ROBOFLOW_API_KEY env var
-    workspace_name="yolov8-ofcbj",
-    workflow_id="general-segmentation-api-9",
+    workspace_name="your-workspace-name",  # tu workspace
+    workflow_id="your-workflow-id",  # tu workflow
     classes=["paper", "plastic", "glass", "metal", "cardboard"]
 )
 
