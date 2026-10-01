@@ -63,6 +63,12 @@ def main():
         action="store_true",
         help="Save frames with detections to output/",
     )
+    parser.add_argument(
+        "--inference-every",
+        type=int,
+        default=5,
+        help="Run inference every N frames (default: 5)",
+    )
     args = parser.parse_args()
 
     # Initialize detector
@@ -97,9 +103,8 @@ def main():
         frame_count = 0
 
     frame_times = []
-    last_inference_time = 0
     last_result = None
-    inference_interval = 1.0  # Infer every 1 second to avoid API rate limits
+    inference_every_n_frames = args.inference_every
 
     try:
         while True:
@@ -110,12 +115,11 @@ def main():
 
             current_time = time.time()
 
-            # Run inference periodically
-            if current_time - last_inference_time >= inference_interval:
+            # Run inference every N frames
+            if len(frame_times) % inference_every_n_frames == 0:
                 try:
                     result = detector.predict(frame)
                     last_result = result
-                    last_inference_time = current_time
 
                     # Print results
                     print(f"\n[ClearSky] Detection result:")
@@ -130,10 +134,13 @@ def main():
                     print(f"[ERROR] Inference failed: {e}")
 
             # Calculate FPS
-            frame_times.append(1.0 / max(time.time() - current_time, 0.001))
+            frame_times.append(current_time)
             if len(frame_times) > 15:
                 frame_times.pop(0)
-            avg_fps = sum(frame_times) / len(frame_times) if frame_times else 0
+            if len(frame_times) > 1:
+                avg_fps = (len(frame_times) - 1) / (frame_times[-1] - frame_times[0])
+            else:
+                avg_fps = 0
 
             # Display FPS on frame
             cv2.putText(
