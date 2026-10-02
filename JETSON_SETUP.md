@@ -136,7 +136,7 @@ python3 scripts/test_camera_remote.py --list-cameras
 
 ## Notas
 
-- La API key está hardcodeada en el código (`REMOVED_API_KEY`)
+- La API key debe configurarse como variable de entorno: `export ROBOFLOW_API_KEY="tu_api_key"`
 - El modelo usado es `yolov8-trash-detections/6`
 - Las detecciones se hacen en la nube, no localmente
 - El rate limit es de 4 FPS por defecto para evitar saturar la API
