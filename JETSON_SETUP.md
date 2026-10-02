@@ -4,7 +4,7 @@
 
 - Jetson Nano 4GB
 - JetPack 4.6.1 (L4T 32.7.1)
-- Python 3.6-3.8
+- Python 3.6-3.8 (incluido en JetPack)
 - Cámara USB
 
 ## Instalación
@@ -32,56 +32,28 @@ sudo apt install -y \
     v4l-utils
 ```
 
-### 3. Instalar PyTorch para Jetson
-
-```bash
-# PyTorch 1.10 para JetPack 4.6.1 (Python 3.6)
-wget https://nvidia.box.com/shared/static/fjtbno0vpo676a25cgvuqc1wnb535f7p.whl -O torch-1.10.0-cp36-cp36m-linux_aarch64.whl
-pip3 install torch-1.10.0-cp36-cp36m-linux_aarch64.whl
-
-# Para Python 3.8:
-# wget https://nvidia.box.com/shared/static/veo87travc28kz5lq4m8q7y w4z5h8vq.whl -O torch-1.10.0-cp38-cp38-linux_aarch64.whl
-# pip3 install torch-1.10.0-cp38-cp38-linux_aarch64.whl
-```
-
-### 4. Instalar TorchVision
-
-```bash
-sudo apt install -y libjpeg-dev zlib1g-dev
-git clone --branch v0.11.1 https://github.com/pytorch/vision torchvision
-cd torchvision
-python3 setup.py install
-```
-
-### 5. Instalar ONNX Runtime (alternativa a PyTorch)
-
-```bash
-# ONNX Runtime para Jetson
-sudo apt install -y libhdf5-serial-dev hdf5-tools libhdf5-dev
-pip3 install onnxruntime-gpu==1.10.0
-```
-
-### 6. Instalar ClearSky LiDAR
+### 3. Instalar ClearSky LiDAR con detección remota
 
 ```bash
 git clone https://github.com/SantiC57/clearsky-lidar.git
 cd clearsky-lidar
-pip3 install -e ".[inference,remote]"
+pip3 install -e ".[remote]"
 ```
 
-### 7. Verificar instalación
+Esto instalará:
+- `supervision` - para visualización de detecciones
+- `inference-sdk` - para comunicación con Roboflow API
+- `opencv-python` - para procesamiento de imágenes
+
+### 4. Verificar instalación
 
 ```bash
 python3 -c "
-import torch
-print(f'PyTorch: {torch.__version__}')
-print(f'CUDA disponible: {torch.cuda.is_available()}')
-if torch.cuda.is_available():
-    print(f'Dispositivo: {torch.cuda.get_device_name(0)}')
-
-from clearsky_lidar.local_detection import WasteDetectorLocal
-detector = WasteDetectorLocal(model_path='models/best.onnx')
-print(f'✓ Modelo cargado: {detector.classes}')
+from clearsky_lidar.remote_detection import WasteDetectorRemote, REMOTE_DETECTION_AVAILABLE
+print(f'Remote detection available: {REMOTE_DETECTION_AVAILABLE}')
+if REMOTE_DETECTION_AVAILABLE:
+    detector = WasteDetectorRemote()
+    print(f'✓ Detector creado: {detector.model_id}')
 "
 ```
 
@@ -90,39 +62,61 @@ print(f'✓ Modelo cargado: {detector.classes}')
 ### Inferencia con cámara
 
 ```bash
-python3 scripts/test_camera_local.py --model models/best.onnx --confidence 0.5
+python3 scripts/test_camera_remote.py
 ```
 
 ### Parámetros
 
 - `--camera`: Índice de la cámara (default: 0)
-- `--width`: Ancho del frame (default: 640)
-- `--height`: Alto del frame (default: 480)
-- `--model`: Ruta al modelo (default: models/best.pt)
-- `--confidence`: Umbral de confianza (default: 0.5)
-- `--device`: Dispositivo ('cpu', 'cuda', o None para auto)
-- `--inference-every`: Ejecutar inferencia cada N frames (default: 1)
+- `--list-cameras`: Lista cámaras disponibles
+- `--fps-limit`: Límite de llamadas API por segundo (default: 4.0)
+
+### Ejemplo con parámetros
+
+```bash
+python3 scripts/test_camera_remote.py --camera 0 --fps-limit 3.0
+```
 
 ## Rendimiento Esperado
 
-- **Modelo .pt en GPU**: ~15-20 FPS
-- **Modelo .onnx en GPU**: ~20-30 FPS
-- **Modelo .onnx en CPU**: ~2-5 FPS
+La detección remota usa la API de Roboflow, por lo que el rendimiento depende de:
+- Velocidad de internet (latencia)
+- Tamaño de imagen (downscaling a 640px)
+- Rate limiting (4 FPS por defecto)
+
+**Rendimiento típico:**
+- Latencia por inferencia: ~190ms (con downscaling)
+- FPS efectivo: 3-4 FPS (limitado por rate limit)
+- Uso de CPU: bajo (inferencia en la nube)
+- Uso de RAM: ~200MB
+
+## Ventajas de Detección Remota
+
+1. **No requiere GPU local** - La inferencia se hace en la nube
+2. **Modelo actualizado** - Usa el modelo `yolov8-trash-detections/6` de Roboflow
+3. **Optimizado** - Downscaling automático y rate limiting
+4. **Threaded** - Inferencia en background, no bloquea la UI
+5. **Manejo de errores** - Backoff automático y detección de errores fatales
 
 ## Solución de Problemas
 
-### Error: "CUDA out of memory"
+### Error: "Remote detection dependencies not available"
 
-Reducir el tamaño del frame:
+Asegúrate de instalar con el extra `remote`:
 ```bash
-python3 scripts/test_camera_local.py --width 320 --height 240
+pip3 install -e ".[remote]"
 ```
 
-### Error: "Model file not found"
+### Error: "API key is required"
 
-Asegúrate de que el modelo está en `models/best.pt` o especifica la ruta:
+Configura la API key de Roboflow:
 ```bash
-python3 scripts/test_camera_local.py --model /ruta/al/modelo.pt
+export ROBOFLOW_API_KEY="tu_api_key"
+```
+
+O pasa la API key al detector:
+```python
+detector = WasteDetectorRemote(api_key="tu_api_key")
 ```
 
 ### Error: "Camera not found"
@@ -131,10 +125,19 @@ Verifica que la cámara está conectada:
 ```bash
 ls -l /dev/video*
 v4l2-ctl --list-devices
+python3 scripts/test_camera_remote.py --list-cameras
 ```
+
+### Baja velocidad de inferencia
+
+- Verifica tu conexión a internet
+- Reduce `--fps-limit` si hay errores
+- Asegúrate de que la cámara no esté siendo usada por otra aplicación
 
 ## Notas
 
-- El modelo `best.pt` fue entrenado con las mismas 6 clases que el modelo de ClearSky
-- Para mejor rendimiento en Jetson, usa el modelo ONNX con GPU
-- La cámara USB puede limitar los FPS (ver diagnóstico en PC: ~7 FPS)
+- La API key está hardcodeada en el código (`REMOVED_API_KEY`)
+- El modelo usado es `yolov8-trash-detections/6`
+- Las detecciones se hacen en la nube, no localmente
+- El rate limit es de 4 FPS por defecto para evitar saturar la API
+- Funciona en Python 3.6-3.13 (compatible con Jetson Nano)
