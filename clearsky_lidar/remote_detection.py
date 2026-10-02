@@ -32,7 +32,7 @@ except ImportError:
 
 
 # Configuration
-API_KEY = "iNpTDdo5xBjhlHrWS8CQ"
+API_KEY = os.getenv("ROBOFLOW_API_KEY", "")
 MODEL_ID = "yolov8-trash-detections/6"
 
 MAX_UPLOAD_WIDTH = 640  # Downscale before upload for faster inference
