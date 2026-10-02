@@ -12,7 +12,7 @@ requires-python = ">=3.7"
 authors = [
     {name = "ClearSky Team"},
 ]
-keywords = ["lidar", "slamtec", "m1m1", "drone", "waste-detection", "point-cloud"]
+keywords = ["lidar", "slamtec", "m1m1", "drone", "waste-detection", "point-cloud", "classification"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -43,9 +43,28 @@ processing = [
 visualization = [
     "Pillow",
 ]
+training = [
+    "ultralytics==8.0.196",
+    "mlflow>=2.0",
+    "albumentations>=1.3",
+    "torch>=1.13",
+    "torchvision>=0.14",
+    "pyyaml",
+]
+inference = [
+    "ultralytics==8.0.196",
+    "torch>=1.13",
+]
+remote = [
+    "requests>=2.25",
+    "opencv-python>=4.5",
+    "supervision>=0.14.0",
+    "inference-sdk>=0.9.0",
+]
 dev = [
     "pytest",
     "pyyaml",
+    "pytest-mock",
 ]
 all = [
     "scipy",
@@ -57,3 +76,11 @@ all = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["clearsky_lidar*"]
+
+[tool.pytest.ini_options]
+markers = [
+    "gpu: marks tests requiring GPU",
+    "integration: marks integration tests",
+    "slow: marks slow tests (>30s)",
+]
+testpaths = ["tests"]
