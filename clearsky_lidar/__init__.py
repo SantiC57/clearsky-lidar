@@ -14,6 +14,7 @@ __all__ = [
     "Mapper",
     "processing",
     "WasteClassifier",
+    "WasteDetectorLocal",
     "WasteDetectorRemote",
 ]
 
@@ -25,6 +26,9 @@ def __getattr__(name: str):
     if name == "WasteClassifier":
         from .detection import WasteClassifier
         return WasteClassifier
+    if name == "WasteDetectorLocal":
+        from .detection import WasteDetectorLocal
+        return WasteDetectorLocal
     if name == "WasteDetectorRemote":
         from .detection import WasteDetectorRemote
         return WasteDetectorRemote
