@@ -20,6 +20,7 @@ import time
 os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
 
 import cv2
+import numpy as np
 
 # Check for optional dependencies
 try:
