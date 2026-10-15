@@ -34,13 +34,10 @@ ambas deben estar en verde para habilitar el botón de merge.
 Se ejecuta en **cada PR** abierto/editado/sincronizado contra `main`.
 
 ### Qué valida
-1. **El PR menciona al menos un issue** usando cualquiera de estos patrones:
+1. **El PR menciona al menos un issue de cierre** usando cualquiera de estos patrones:
    - `Closes #123`
    - `Fixes #123`
    - `Resolves #123`
-   - `Relacionado a #123`
-   - `Related to #123`
-   - O simplemente `#123` en título/cuerpo (fallback)
 
 2. **Ese issue existe** en el repositorio.
 
@@ -50,7 +47,7 @@ Se ejecuta en **cada PR** abierto/editado/sincronizado contra `main`.
 
 | Situación | Resultado | Mensaje |
 |-----------|-----------|---------|
-| PR sin ningún `#N` | ❌ **FAIL** | `El PR no menciona ningún issue. Agrega "Closes #N"...` |
+| PR sin `Closes/Fixes/Resolves #N` | ❌ **FAIL** | `El PR no menciona ningún issue de cierre. Agrega "Closes #N"...` |
 | Issue mencionado no existe | ❌ **FAIL** | `El issue #N no existe en este repositorio.` |
 | Issue existe pero **sin** label `approved` | ❌ **FAIL** | `El issue #N NO tiene la etiqueta "approved". Pídele a tu compañero que la agregue...` |
 | Issue existe **y tiene** label `approved` | ✅ **PASS** | `Todos los issues vinculados están aprobados.` |
@@ -108,7 +105,7 @@ Una vez que la CAPA 1 está en verde, **un compañero** (no el autor) debe:
   ```
   Closes #123
   ```
-  (o `Fixes #123`, `Resolves #123`, `Relacionado a #123`).
+  (o `Fixes #123`, `Resolves #123`).
 - El check `Verify linked issue is approved` correrá solo.
 
 ### 4. Si el check falla
@@ -157,7 +154,7 @@ No. La etiqueta la debe poner **otra persona** (el revisor). Es el "segundo par 
 El check valida **todos**. Si *cualquiera* no tiene `approved`, el check falla. Todos deben estar aprobados.
 
 **¿Puedo usar `Relacionado a #N` en vez de `Closes #N`?**
-Sí, el check detecta ambos. Pero usa `Closes #N` o `Fixes #N` cuando el PR **cierra** el issue (GitHub lo cerrará solo al mergear). Usa `Relacionado a #N` solo si el PR toca el tema pero no lo cierra del todo.
+Puedes usarlo como contexto, pero **no** cuenta para este check. Para pasar la validación debes incluir `Closes #N`, `Fixes #N` o `Resolves #N` para el issue que cierra el PR.
 
 **¿El check corre en draft PRs?**
 No, solo en PRs listos para review (opened, edited, synchronize, reopened). Los drafts no disparan el check.

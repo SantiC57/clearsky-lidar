@@ -25,10 +25,10 @@ jobs:
             const title = context.payload.pull_request.title || '';
             const text = `${title}\n${body}`;
             
-            // Patrones explícitos de vinculación: Closes #123, Fixes #123, Resolves #123, Relacionado a #123, Related to #123
-            // NO usamos fallback genérico /#(\d+)/ para no capturar números de PR, commits, etc.
+            // Patrones explícitos de cierre de issues: Closes #123, Fixes #123, Resolves #123
+            // NO usamos fallback genérico /#(\d+)/ ni referencias "related to" para evitar falsos positivos.
             const patterns = [
-              /(?:closes?|fixes?|resolves?|relacionado\s+a|related\s+to)\s+#(\d+)/gi
+              /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi
             ];
             
             const issues = new Set();
@@ -43,7 +43,7 @@ jobs:
             console.log(`Issues encontrados: ${issueNumbers.join(', ') || 'ninguno'}`);
             
             if (issueNumbers.length === 0) {
-              core.setFailed('❌ El PR no menciona ningún issue. Agrega "Closes #N", "Fixes #N", "Resolves #N" o "Relacionado a #N" en el título o cuerpo.');
+              core.setFailed('❌ El PR no menciona ningún issue de cierre. Agrega "Closes #N", "Fixes #N" o "Resolves #N" en el título o cuerpo.');
               return;
             }
             
