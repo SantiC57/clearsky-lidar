@@ -12,3 +12,6 @@ dump/
 .mypy_cache/
 *.pcd
 .atl/
+
+# Experiment data (photos, scans) stays out of git; see manifest.json
+data/
