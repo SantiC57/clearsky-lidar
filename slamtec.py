@@ -153,6 +153,11 @@ class SlamtecMapper:
         data = []
         while pos < len(decompressed):
             parts = struct.unpack("f f h h", decompressed[pos:pos + bytes_per_row])
+            # Cada registro ocupa exactamente 12 bytes:
+            #   f32 distancia | f32 angulo | 2 x int16 (todavia sin decodificar)
+            # `pos` se avanza UNA sola vez por vuelta. Si se avanza dos veces
+            # (24 bytes por registro) se lee 1 de cada 2 puntos y se pierde
+            # la mitad del escaneo.
             pos += bytes_per_row
             distance = parts[0]
             angle_radian = parts[1]
@@ -165,7 +170,6 @@ class SlamtecMapper:
                 valid = True
             # print(f"distance: {distance:.4f}m, angle {math.degrees(angle_radian):.2f}°, valid {valid}")
             data.append((angle_radian, distance, valid))
-            pos += bytes_per_row
 
         return data
 
