@@ -86,6 +86,9 @@ def capture_frames(cap, out_dir, tag, count, interval, camera, requested,
             raise CaptureError("camera stopped delivering frames at photo {}".format(index))
         when = now()
         name = frame_filename(tag, index, when)
+        if os.path.exists(os.path.join(out_dir, name)):
+            raise CaptureError("{} already exists; refusing to overwrite, "
+                               "use another --tag or --out".format(name))
         if not imwrite(os.path.join(out_dir, name), frame):
             raise CaptureError("could not write {}".format(name))
         meta = build_metadata(name, when, index, tag, camera, requested, read_applied(cap))
@@ -115,15 +118,32 @@ def open_camera(camera, width, height, fps):
     return cap
 
 
+def _number(kind, minimum, allow_equal):
+    """argparse type: a number of ``kind`` above (or equal to) ``minimum``."""
+    def parse(text):
+        try:
+            value = kind(text)
+        except ValueError:
+            raise argparse.ArgumentTypeError("not a number: {!r}".format(text))
+        if value < minimum or (value == minimum and not allow_equal):
+            raise argparse.ArgumentTypeError(
+                "must be {} {}, got {}".format(">=" if allow_equal else ">", minimum, text))
+        return value
+    return parse
+
+
 def main(argv=None, open_camera=open_camera):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--camera", type=int, default=0, help="V4L2 index (N in /dev/videoN)")
-    parser.add_argument("--width", type=int, default=1280)
-    parser.add_argument("--height", type=int, default=720)
-    parser.add_argument("--fps", type=float, default=30.0)
-    parser.add_argument("--count", type=int, default=30)
-    parser.add_argument("--interval", type=float, default=1.0, help="seconds between photos")
-    parser.add_argument("--warmup", type=int, default=5, help="frames discarded before saving")
+    parser.add_argument("--camera", type=_number(int, 0, True), default=0,
+                        help="V4L2 index (N in /dev/videoN)")
+    parser.add_argument("--width", type=_number(int, 0, False), default=1280)
+    parser.add_argument("--height", type=_number(int, 0, False), default=720)
+    parser.add_argument("--fps", type=_number(float, 0, False), default=30.0)
+    parser.add_argument("--count", type=_number(int, 0, False), default=30)
+    parser.add_argument("--interval", type=_number(float, 0, True), default=1.0,
+                        help="seconds between photos")
+    parser.add_argument("--warmup", type=_number(int, 0, True), default=5,
+                        help="frames discarded before saving")
     parser.add_argument("--out", required=True, help="folder for photos and JSON files")
     parser.add_argument("--tag", default="frame", help="prefix for file names")
     args = parser.parse_args(argv)

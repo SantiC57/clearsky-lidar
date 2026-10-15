@@ -107,6 +107,34 @@ def test_capture_raises_when_the_camera_stops_delivering(tmp_path):
         )
 
 
+def test_capture_refuses_to_overwrite_an_existing_photo(tmp_path):
+    existing = tmp_path / frame_filename("t", 0, WHEN)
+    existing.write_bytes(b"precious")
+
+    with pytest.raises(CaptureError):
+        capture_frames(
+            FakeCap(), str(tmp_path), tag="t", count=2, interval=0, camera=0,
+            requested=REQUESTED, warmup=0, sleep=lambda s: None, now=lambda: WHEN,
+        )
+
+    assert existing.read_bytes() == b"precious"
+
+
+@pytest.mark.parametrize("flag,value", [
+    ("--count", "0"), ("--count", "-3"), ("--interval", "-1"), ("--warmup", "-1"),
+    ("--width", "0"), ("--height", "-720"), ("--fps", "0"),
+])
+def test_main_rejects_invalid_numbers_before_touching_the_camera(tmp_path, flag, value):
+    opened = []
+
+    with pytest.raises(SystemExit) as exc:
+        main(["--out", str(tmp_path), flag, value],
+             open_camera=lambda *a, **k: opened.append(a))
+
+    assert exc.value.code == 2
+    assert opened == []
+
+
 def test_main_returns_error_code_when_camera_cannot_open(tmp_path):
     rc = main(["--camera", "0", "--out", str(tmp_path), "--tag", "t"],
               open_camera=lambda *a, **k: None)
